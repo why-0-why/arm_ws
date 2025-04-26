@@ -1,0 +1,12 @@
+# Request
+uint8 node_id # 对应电机节点号
+uint8 command_num # 位置模式填 0xf3
+uint8 command # 写4byte 0x23,2byte 0x2b,1byte 0x2f 读0x40 (位置模式)
+uint8[2] index # 
+uint8 subindex
+uint8[4] data
+---
+# Response
+bool status
+bool SUCCESS=1
+bool FAILURE=0
