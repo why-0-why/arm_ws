@@ -28,6 +28,7 @@ private:
     uint8_t controled_reduction_ratio_{50};
     uint16_t controled_encode_num_{16384};
     /*控制器电机数据*/
+    uint8_t controled_online_ = 0;
     bool zero_request_flag_ = 0;
     double rotor_angle_;
     double axis_angle_;
@@ -94,7 +95,7 @@ public:
             {
                 recv_data_[i] = 0;
             }
-            /* Recv1.检查是否有数据 */
+            /* Recv1.检查是否有错误数据 */
             if (can_.recv(&recv_id_, &recv_len_, recv_data_))
                 ;
             else
@@ -102,6 +103,8 @@ public:
             /* Recv2.处理数据 */
             if (recv_id_ == (uint32_t)(READ_ID + controller_node_id_)) // RM电调数据
             {
+                if(controled_online_<100)controled_online_++;// 确保在线
+
                 rotor_angle_ = (recv_data_[0] * 255 + recv_data_[1]) * 360.0f / encode_num_;
                 axis_angle_ = this->GetAxisAngle(recv_data_[0] * 256 + recv_data_[1]) * 360.0f / (encode_num_ * reduction_ratio_);
                 controled_position_ = this->simpleMovingAverage(controled_position_); // 滤波
@@ -208,10 +211,14 @@ public:
      */
     void timer_send_callback()
     {
-        controled_position_ = axis_angle_ / 360.0f * controled_encode_num_ * controled_reduction_ratio_;
+        if(controled_online_)
+        {
+            controled_position_ = axis_angle_ / 360.0f * controled_encode_num_ * controled_reduction_ratio_;
 
-        /* 发送位置指令 */
-        send_position_command(controled_position_);
+            /* 发送位置指令 */
+            send_position_command(controled_position_);
+            controled_online_--;// 确保在线
+        }
     }
 
     /**
