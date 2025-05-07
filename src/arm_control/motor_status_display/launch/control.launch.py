@@ -4,6 +4,17 @@ import launch_ros
 ## 控制端节点启动 ##
 def generate_launch_description():
     # 1.声明launch参数
+    # 关节电机参数
+    joint1_node_id = launch.actions.DeclareLaunchArgument('joint1_node_id', default_value='2')
+    joint1_name = launch.actions.DeclareLaunchArgument('joint1_name', default_value='joint1')
+
+
+    joint2_node_id = launch.actions.DeclareLaunchArgument('joint2_node_id', default_value='3')
+    joint2_name = launch.actions.DeclareLaunchArgument('joint2_name', default_value='joint2')
+
+    joint3_node_id = launch.actions.DeclareLaunchArgument('joint3_node_id', default_value='4')
+    joint3_name = launch.actions.DeclareLaunchArgument('joint3_name', default_value='joint3')
+
     # 控制器参数
     M3508_reduction_ratio = launch.actions.DeclareLaunchArgument('M3508_reduction_ratio', default_value='19')# M3508减速比1:19
     M3508_encode_num= launch.actions.DeclareLaunchArgument('M3508_encode_num', default_value='8192')# M3508转子编码线数8192
@@ -50,6 +61,13 @@ def generate_launch_description():
     )
     # 3.合成启动描述并返回
     launch_description = launch.LaunchDescription([
+        # 关节电机参数
+        joint1_node_id,
+        joint1_name,
+        joint2_node_id,
+        joint2_name,
+        joint3_node_id,
+        joint3_name,
         # 控制器参数
         M3508_reduction_ratio,
         M3508_encode_num,

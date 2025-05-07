@@ -5,8 +5,6 @@
 
 using CommandFeedback = servo_motor_interface::srv::CommandFeedback;
 
-#define READ_ID 0x200
-
 class AngelReadNode : public rclcpp::Node
 {
 private:
@@ -32,6 +30,7 @@ private:
     bool zero_request_flag_ = 0;
     double rotor_angle_;
     double axis_angle_;
+    long tiny_pos_;
     /*被控制电机数据*/
     int32_t controled_position_;
     /* 窗口滤波器 */
@@ -103,7 +102,8 @@ public:
             /* Recv2.处理数据 */
             if (recv_id_ == (uint32_t)(READ_ID + controller_node_id_)) // RM电调数据
             {
-                if(controled_online_<100)controled_online_++;// 确保在线
+                if (controled_online_ < 100)
+                    controled_online_++; // 确保在线
 
                 rotor_angle_ = (recv_data_[0] * 255 + recv_data_[1]) * 360.0f / encode_num_;
                 axis_angle_ = this->GetAxisAngle(recv_data_[0] * 256 + recv_data_[1]) * 360.0f / (encode_num_ * reduction_ratio_);
@@ -195,8 +195,23 @@ public:
         {
         case SET_ZERO:
             zero_request_flag_ = 1;
+            tiny_pos_ = 0;
             while (zero_request_flag_)
                 ;
+            response->status = CommandFeedback::Response::SUCCESS;
+            break;
+        case ADD_POS:
+            if (tiny_pos_ < 10000)
+            {
+                tiny_pos_ = tiny_pos_ + 200;
+            }
+            response->status = CommandFeedback::Response::SUCCESS;
+            break;
+        case SUB_POS:
+            if (tiny_pos_ > -10000)
+            {
+                tiny_pos_ = tiny_pos_ - 200;
+            }
             response->status = CommandFeedback::Response::SUCCESS;
             break;
         default:
@@ -211,13 +226,13 @@ public:
      */
     void timer_send_callback()
     {
-        if(controled_online_)
+        if (controled_online_)
         {
-            controled_position_ = axis_angle_ / 360.0f * controled_encode_num_ * controled_reduction_ratio_;
+            controled_position_ = tiny_pos_ + axis_angle_ / 360.0f * controled_encode_num_ * controled_reduction_ratio_;
 
             /* 发送位置指令 */
             send_position_command(controled_position_);
-            controled_online_--;// 确保在线
+            controled_online_--; // 确保在线
         }
     }
 
